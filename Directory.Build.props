@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <!-- Treat warnings as errors for cleaner code -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>CS8618;CS8601;CS8604;CS8602;CS8625;CS8600</WarningsNotAsErrors>
+    
+    <!-- Enable nullable reference types -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- Enable long paths support -->
+    <EnableWin32LongPaths>true</EnableWin32LongPaths>
+    
+    <!-- Assembly info -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Deterministic>true</Deterministic>
+    
+    <!-- Analysis -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    
+    <!-- High-level security features -->
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,60 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+*.userprefs
+
+# .NET Core
+project.lock.json
+project.assets.json
+*.log
+
+# VS Code
+.vscode/
+
+# Visual Studio
+.vs/
+*.csproj.user
+*.dbmdl
+*.ssmssm
+*.rscommand
+*.tmp_proj
+*_i.c
+*_p.c
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/packages/*
+
+# Publish output
+publish/
+Publish/
+
+# OS files
+Thumbs.db
+*.DS_Store

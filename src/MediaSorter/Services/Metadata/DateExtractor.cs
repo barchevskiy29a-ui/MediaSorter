@@ -72,14 +72,6 @@ public class DateExtractor : IDateExtractor
         date = _fileNameParser.ParseFromFileName(filePath);
         if (date.HasValue) return Task.FromResult<(DateOnly?, DateSource)>((date.Value, Source: DateSource.FileName));
 
-        // 8. File system creation time
-        date = TryGetFileSystemCreationTime(filePath);
-        if (date.HasValue) return Task.FromResult<(DateOnly?, DateSource)>((date.Value, Source: DateSource.FileSystemCreationTime));
-
-        // 9. File system last write time
-        date = TryGetFileSystemLastWriteTime(filePath);
-        if (date.HasValue) return Task.FromResult<(DateOnly?, DateSource)>((date.Value, Source: DateSource.FileSystemLastWriteTime));
-
         return Task.FromResult<(DateOnly? Date, DateSource Source)>((null, DateSource.Unknown));
     }
 
@@ -195,33 +187,4 @@ public class DateExtractor : IDateExtractor
         return null;
     }
 
-    private DateOnly? TryGetFileSystemCreationTime(string filePath)
-    {
-        try
-        {
-            var creationTime = File.GetCreationTimeUtc(filePath);
-            if (creationTime > DateTime.MinValue && creationTime < DateTime.MaxValue)
-                return DateOnly.FromDateTime(creationTime);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogTrace(ex, "File system creation time failed for {File}", filePath);
-        }
-        return null;
-    }
-
-    private DateOnly? TryGetFileSystemLastWriteTime(string filePath)
-    {
-        try
-        {
-            var lastWrite = File.GetLastWriteTimeUtc(filePath);
-            if (lastWrite > DateTime.MinValue && lastWrite < DateTime.MaxValue)
-                return DateOnly.FromDateTime(lastWrite);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogTrace(ex, "File system last write time failed for {File}", filePath);
-        }
-        return null;
-    }
 }

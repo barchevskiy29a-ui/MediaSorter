@@ -9,9 +9,7 @@ public enum DateSource
     QuickTimeCreationDate,
     XmpCreateDate,
     XmpModifyDate,
-    FileName,
-    FileSystemCreationTime,
-    FileSystemLastWriteTime
+    FileName
 }
 
 public enum ConflictAction

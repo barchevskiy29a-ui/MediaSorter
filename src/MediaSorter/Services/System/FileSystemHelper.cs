@@ -147,8 +147,8 @@ public class FileSystemHelper
 
             var psi = new ProcessStartInfo
             {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -Command \"New-Item -ItemType Directory -Path '{targetPath}' -Force | Out-Null\"",
+                FileName = "cmd.exe",
+                Arguments = $"/c mkdir \"{targetPath}\" 2>nul",
                 Verb = "runas",
                 UseShellExecute = true,
                 WindowStyle = ProcessWindowStyle.Hidden,

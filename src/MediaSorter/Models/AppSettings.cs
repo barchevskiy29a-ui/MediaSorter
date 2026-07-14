@@ -11,4 +11,5 @@ public record AppSettings
     public bool SkipAlreadySorted { get; set; } = true;
     public bool GroupPanoramas { get; set; } = true;
     public int MaxParallelism { get; set; } = 4;
+    public string OutputFolderName { get; set; } = "медиа-архив";
 }

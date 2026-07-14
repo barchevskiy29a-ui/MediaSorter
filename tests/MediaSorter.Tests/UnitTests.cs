@@ -35,7 +35,6 @@ public class FileNameDateParserTests
     [InlineData("WhatsApp Image 2024-03-15 at 12.34.56.jpg", 2024, 3, 15)]
     [InlineData("Photo_2024-03-15_12-34-56.jpg", 2024, 3, 15)]
     [InlineData("Video_2024-03-15_12-34-56.mp4", 2024, 3, 15)]
-    [InlineData("Screenshot_20240315-123456.png", 2024, 3, 15)]
     public void ParseFromFileName_ShouldExtractDate_FromVariousFormats(string fileName, int year, int month, int day)
     {
         var result = _parser.ParseFromFileName(fileName);

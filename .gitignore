@@ -58,3 +58,8 @@ Publish/
 # OS files
 Thumbs.db
 *.DS_Store
+
+# Temp files
+*.png
+*.exe
+.playwright-mcp/

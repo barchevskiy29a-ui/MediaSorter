@@ -74,8 +74,7 @@ public class FileOrganizer : IFileOrganizer
         {
             ct.ThrowIfCancellationRequested();
 
-            var targetFolder = plan.TargetFolderName;
-            var targetDir = Path.Combine(rootPath, targetFolder);
+            var targetDir = plan.TargetDirectory;
             
             _fileSystem.EnsureDirectoryExists(targetDir);
             createdDirs.Add(targetDir);

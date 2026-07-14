@@ -5,8 +5,6 @@ using MediaSorter.Services.Metadata;
 using MediaSorter.Services.System;
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace MediaSorter.Services.Scanning;
 
@@ -47,6 +45,7 @@ public class PhotoScanner : IPhotoScanner
         _logger.LogInformation("Начинаю сканирование: {RootPath}", rootPath);
 
         var files = GetImageFiles(rootPath, _settings.ScanRecursively).ToList();
+
         totalFiles = files.Count;
 
         _logger.LogInformation("Найдено файлов для обработки: {Count}", totalFiles);
@@ -60,13 +59,13 @@ public class PhotoScanner : IPhotoScanner
         var lockObj = new object();
         var processedCount = 0;
 
-        await Task.Run(() => Parallel.ForEach(files, parallelOptions, filePath =>
+        await Parallel.ForEachAsync(files, parallelOptions, async (filePath, innerCt) =>
         {
-            ct.ThrowIfCancellationRequested();
+            innerCt.ThrowIfCancellationRequested();
             
             try
             {
-                var photo = ProcessFile(filePath, rootPath);
+                var photo = await ProcessFileAsync(filePath, rootPath);
                 
                 lock (lockObj)
                 {
@@ -102,7 +101,7 @@ public class PhotoScanner : IPhotoScanner
                     processedCount++;
                 }
             }
-        }), ct);
+        });
 
         stopwatch.Stop();
 
@@ -124,26 +123,24 @@ public class PhotoScanner : IPhotoScanner
         return result;
     }
 
-    private PhotoFile ProcessFile(string filePath, string rootPath)
+    private async Task<PhotoFile> ProcessFileAsync(string filePath, string rootPath)
     {
         var relativePath = Path.GetRelativePath(rootPath, filePath);
-        var parentFolder = Path.GetDirectoryName(relativePath)?.Split(Path.DirectorySeparatorChar).FirstOrDefault() ?? "";
+        var fileInfo = new FileInfo(filePath);
         
-        if (_settings.SkipAlreadySorted && RegexPatterns.DateFolderPattern.IsMatch(parentFolder))
+        if (_settings.SkipAlreadySorted)
         {
-            if (DateOnly.TryParseExact(parentFolder, "dd.MM.yyyy", out var folderDate))
+            var firstSegment = Path.GetDirectoryName(relativePath)?.Split(Path.DirectorySeparatorChar).FirstOrDefault() ?? "";
+            if (!string.IsNullOrEmpty(firstSegment) && 
+                string.Equals(firstSegment, _settings.OutputFolderName, StringComparison.OrdinalIgnoreCase))
             {
-                var extracted = _dateExtractor.ExtractAsync(filePath).GetAwaiter().GetResult();
-                if (extracted.HasValue && extracted.Value == folderDate)
-                {
-                    return new PhotoFile(filePath, folderDate, DateSource.ExifDateTimeOriginal, 
-                        new FileInfo(filePath).Length, Path.GetFileName(filePath), Path.GetExtension(filePath), 
-                        relativePath, Status: FileStatus.SkippedAlreadySorted);
-                }
+                return new PhotoFile(filePath, null, DateSource.Unknown, 
+                    fileInfo.Length, Path.GetFileName(filePath), Path.GetExtension(filePath), 
+                    relativePath, Status: FileStatus.SkippedAlreadySorted);
             }
         }
 
-        var (date, source) = _dateExtractor.ExtractWithSourceAsync(filePath).GetAwaiter().GetResult();
+        var (date, source) = await _dateExtractor.ExtractWithSourceAsync(filePath);
         
         var status = date.HasValue ? FileStatus.Scanned : FileStatus.SkippedNoDate;
         
@@ -151,7 +148,7 @@ public class PhotoScanner : IPhotoScanner
             SourcePath: filePath,
             DateTaken: date,
             DateSource: source,
-            FileSize: new FileInfo(filePath).Length,
+            FileSize: fileInfo.Length,
             FileName: Path.GetFileName(filePath),
             Extension: Path.GetExtension(filePath),
             RelativePath: relativePath,

@@ -23,6 +23,20 @@ public static class RegexPatterns
         ".3gp"
     ];
 
+    public static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".jpe", ".jfif",
+        ".png", ".heic", ".heif",
+        ".tiff", ".tif", ".bmp", ".webp"
+    };
+
+    public static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".m4v", ".mov", ".qt",
+        ".avi", ".mkv", ".wmv", ".webm",
+        ".mts", ".m2ts", ".mpeg", ".mpg", ".3gp"
+    };
+
     // Folder name pattern: DD.MM.YYYY
     public static readonly Regex DateFolderPattern = new(@"^\d{2}\.\d{2}\.\d{4}$", RegexOptions.Compiled);
     

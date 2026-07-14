@@ -7,7 +7,7 @@
         Title="Предпросмотр перемещения" Height="500" Width="700"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
-        Background="#F3F2F1">
+        Background="{StaticResource BackgroundBrush}">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -21,15 +21,15 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="White" BorderBrush="#D2D0CE" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock Style="{StaticResource HeadingStyle}" Text="План перемещения"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                    <TextBlock Text="Всего файлов к перемещению: " Foreground="#605E5C"/>
-                    <TextBlock Text="{Binding TotalToMove}" FontWeight="Bold" Foreground="#0078D4"/>
-                    <TextBlock Text="   в " Margin="16,0,0,0" Foreground="#605E5C"/>
-                    <TextBlock Text="{Binding TotalFolders}" FontWeight="Bold" Foreground="#0078D4"/>
-                    <TextBlock Text=" папках" Foreground="#605E5C"/>
+                    <TextBlock Text="Всего файлов к перемещению: " Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding TotalToMove}" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                    <TextBlock Text="   в " Margin="16,0,0,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding TotalFolders}" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                    <TextBlock Text=" папках" Foreground="{StaticResource TextSecondaryBrush}"/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -37,7 +37,7 @@
         <DataGrid Grid.Row="1" ItemsSource="{Binding Moves}" AutoGenerateColumns="False" 
                   IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
                   HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-                  RowHeaderWidth="0" AlternatingRowBackground="#F3F2F1"
+                  RowHeaderWidth="0" AlternatingRowBackground="{StaticResource BackgroundBrush}"
                   VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Папка (дата)" Binding="{Binding FolderName}" Width="*">

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using MediaSorter.Models;
 using MediaSorter.Services.Organization;
+using System.Globalization;
 using System.IO;
 
 namespace MediaSorter.ViewModels;
@@ -29,21 +30,36 @@ public partial class PhotoItemViewModel : ObservableObject
 
     public string SizeFormatted => FormatSize(FileSize);
 
-    public MovePlan ToMovePlan()
-{
-    var targetFolder = _photo.GetTargetFolderName("dd.MM.yyyy", "дата съемки неопределена");
-    var targetPath = Path.Combine(_photo.SourceDirectory, targetFolder, _photo.FileName);
-    
-    return new MovePlan(
-        SourcePath: _photo.SourcePath,
-        TargetPath: targetPath,
-        FileName: _photo.FileName,
-        DateTaken: _photo.DateTaken ?? DateOnly.MinValue,
-        DateSource: _photo.DateSource,
-        ConflictAction: ConflictResolution.Move,
-        SourceHash: _photo.Hash
-    );
-}
+    public MovePlan ToMovePlan(string rootPath, string outputFolderName, bool sortByDays)
+    {
+        var dayFolder = _photo.GetTargetFolderName("dd.MM.yyyy", "дата съемки неопределена");
+
+        string targetPath;
+        if (_photo.DateTaken.HasValue)
+        {
+            var dt = _photo.DateTaken.Value;
+            var ci = CultureInfo.GetCultureInfo("ru-RU");
+            var monthName = ci.DateTimeFormat.GetMonthName(dt.Month);
+            var relativeDir = sortByDays
+                ? $@"{outputFolderName}\{dt.Year}\{monthName} {dt.Year}\{dayFolder}"
+                : $@"{outputFolderName}\{dt.Year}\{monthName} {dt.Year}";
+            targetPath = Path.Combine(rootPath, relativeDir, _photo.FileName);
+        }
+        else
+        {
+            targetPath = Path.Combine(rootPath, outputFolderName, dayFolder, _photo.FileName);
+        }
+
+        return new MovePlan(
+            SourcePath: _photo.SourcePath,
+            TargetPath: targetPath,
+            FileName: _photo.FileName,
+            DateTaken: _photo.DateTaken ?? DateOnly.MinValue,
+            DateSource: _photo.DateSource,
+            ConflictAction: ConflictResolution.Move,
+            SourceHash: _photo.Hash
+        );
+    }
 
     private static string FormatSize(long bytes)
     {

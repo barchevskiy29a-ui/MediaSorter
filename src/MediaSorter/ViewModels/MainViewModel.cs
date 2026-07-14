@@ -8,7 +8,6 @@ using MediaSorter.Services.Scanning;
 using MediaSorter.Services.Organization;
 using MediaSorter.Services.Settings;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Windows;
@@ -52,7 +51,16 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "Выберите папку с медиа";
 
+    [ObservableProperty]
+    private bool _sortByDays = true;
+
+    [ObservableProperty]
+    private bool _photosOnly = false;
+
     public ObservableCollection<PhotoItemViewModel> LogItems { get; } = [];
+    public ObservableCollection<FolderNode> FolderTree { get; } = [];
+
+    private readonly HashSet<string> _excludedPaths = new(StringComparer.OrdinalIgnoreCase);
 
     public IAsyncRelayCommand BrowseCommand { get; }
     public IAsyncRelayCommand ScanCommand { get; }
@@ -96,7 +104,7 @@ public partial class MainViewModel : ObservableObject
         CleanEmptyFoldersCommand.NotifyCanExecuteChanged();
     }
 
-    private async Task BrowseAsync()
+    private Task BrowseAsync()
     {
         var dialog = new OpenFolderDialog
         {
@@ -108,6 +116,7 @@ public partial class MainViewModel : ObservableObject
         {
             SourceFolder = dialog.FolderName;
         }
+        return Task.CompletedTask;
     }
 
     private async Task ScanAsync()
@@ -147,6 +156,8 @@ public partial class MainViewModel : ObservableObject
                     LogItems.Add(new PhotoItemViewModel(photo));
                 }
 
+                RebuildFolderTree(result.Photos);
+
                 HasScanResults = result.NewPhotos > 0;
                 CanStartMove = result.NewPhotos > 0;
                 StatusText = $"Готово: {result.WithDate} с датой, {result.WithoutDate} без даты, {result.AlreadySorted} уже отсортированы";
@@ -181,18 +192,22 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private async Task PreviewAsync()
+    private Task PreviewAsync()
     {
-        if (!HasScanResults) return;
+        if (!HasScanResults) return Task.CompletedTask;
 
+        var outputFolder = _settings.Current.OutputFolderName;
         var plans = LogItems
             .Where(x => x.Status == FileStatus.Scanned && x.HasDate)
-            .Select(x => x.ToMovePlan())
+            .Where(x => !IsFileExcluded(x.RelativePath))
+            .Where(x => !PhotosOnly || !Helpers.RegexPatterns.VideoExtensions.Contains(Path.GetExtension(x.FileName)))
+            .Select(x => x.ToMovePlan(SourceFolder, outputFolder, SortByDays))
             .ToList();
 
         var previewWindow = new Views.PreviewWindow(plans);
         previewWindow.Owner = Application.Current.MainWindow;
         previewWindow.ShowDialog();
+        return Task.CompletedTask;
     }
 
     private async Task StartMoveAsync()
@@ -214,10 +229,13 @@ public partial class MainViewModel : ObservableObject
             {
                 _uiLogger.Log("Начало перемещения файлов");
 
+                var outputFolder = _settings.Current.OutputFolderName;
                 var plans = LogItems
                     .Where(x => x.Status == FileStatus.Scanned && x.HasDate)
-                    .Select(x => x.ToMovePlan())
-                    .ToList();
+                    .Where(x => !IsFileExcluded(x.RelativePath))
+            .Where(x => !PhotosOnly || !Helpers.RegexPatterns.VideoExtensions.Contains(Path.GetExtension(x.FileName)))
+            .Select(x => x.ToMovePlan(SourceFolder, outputFolder, SortByDays))
+            .ToList();
 
                 var result = await _organizer.OrganizeAsync(plans, SourceFolder, _cts.Token,
                     new Progress<MediaSorter.Services.Organization.OrganizeProgress>(p =>
@@ -330,5 +348,78 @@ public partial class MainViewModel : ObservableObject
         {
             _operationLock.Release();
         }
+    }
+
+    private void RebuildFolderTree(IReadOnlyList<PhotoFile> photos)
+    {
+        foreach (var node in FolderTree)
+            node.CheckedChanged -= OnFolderCheckedChanged;
+
+        FolderTree.Clear();
+        _excludedPaths.Clear();
+
+        var nodeMap = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var photo in photos)
+        {
+            var dir = Path.GetDirectoryName(photo.RelativePath);
+            if (string.IsNullOrEmpty(dir)) continue;
+
+            var parts = dir.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+            var current = "";
+
+            for (var i = 0; i < parts.Length; i++)
+            {
+                var parent = current;
+                current = i == 0 ? parts[i] : current + Path.DirectorySeparatorChar + parts[i];
+
+                if (nodeMap.ContainsKey(current)) continue;
+
+                var node = new FolderNode
+                {
+                    Name = parts[i],
+                    FullPath = current,
+                    Parent = parent != "" ? nodeMap[parent] : null
+                };
+                node.CheckedChanged += OnFolderCheckedChanged;
+
+                if (parent == "")
+                    FolderTree.Add(node);
+                else
+                    nodeMap[parent].Children.Add(node);
+
+                nodeMap[current] = node;
+            }
+        }
+    }
+
+    private void OnFolderCheckedChanged(object? sender, EventArgs e)
+    {
+        _excludedPaths.Clear();
+        CollectUnchecked(FolderTree);
+    }
+
+    private void CollectUnchecked(IEnumerable<FolderNode> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            if (!node.IsChecked)
+                _excludedPaths.Add(node.FullPath);
+            else
+                CollectUnchecked(node.Children);
+        }
+    }
+
+    private bool IsFileExcluded(string relativePath)
+    {
+        var dir = Path.GetDirectoryName(relativePath);
+        while (!string.IsNullOrEmpty(dir))
+        {
+            if (_excludedPaths.Contains(dir)) return true;
+            var parent = Path.GetDirectoryName(dir);
+            if (parent == dir) break;
+            dir = parent;
+        }
+        return false;
     }
 }

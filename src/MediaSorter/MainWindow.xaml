@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MediaSorter"
         xmlns:vm="clr-namespace:MediaSorter.ViewModels"
+        xmlns:models="clr-namespace:MediaSorter.Models"
         xmlns:conv="clr-namespace:MediaSorter.Converters"
         mc:Ignorable="d"
         Title="MediaSorter — Сортировка медиа по дате съёмки" 
@@ -25,12 +26,12 @@
             <RowDefinition Height="Auto"/>  <!-- Folder selection -->
             <RowDefinition Height="*"/>     <!-- Log list -->
             <RowDefinition Height="Auto"/>  <!-- Progress -->
-            <RowDefinition Height="Auto"/>  <!-- Buttons -->
+            <RowDefinition Height="Auto"/>  <!-- Checkboxes + Buttons -->
+            <RowDefinition Height="Auto"/>  <!-- Donation footer -->
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Style="{StaticResource HeadingStyle}" 
-                   Text="📁 MediaSorter — Сортировка медиа по дате съёмки"/>
+        <TextBlock Grid.Row="0" Style="{StaticResource HeadingStyle}" Text="📁 MediaSorter v1.2 — Сортировка медиа по дате съёмки" Margin="0,0,0,8"/>
 
         <!-- Folder Selection -->
         <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" 
@@ -47,9 +48,6 @@
                          IsReadOnly="True"
                          VerticalContentAlignment="Center"
                          Padding="8,6"
-                         Background="White"
-                         BorderBrush="#D2D0CE"
-                         BorderThickness="1"
                          ToolTip="Выберите папку с медиа для сканирования"/>
                 
                 <Button Grid.Column="1" 
@@ -68,90 +66,130 @@
             </Grid>
         </Border>
 
-        <!-- Log List -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" 
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,8">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                
-                <!-- Log Header -->
-                <Border Grid.Row="0" Background="{StaticResource BackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="8">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="160"/>
-                            <ColumnDefinition Width="180"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Время" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                        <TextBlock Grid.Column="1" Text="Файл" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                        <TextBlock Grid.Column="2" Text="Статус" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                        <TextBlock Grid.Column="3" Text="Источник даты" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                    </Grid>
-                </Border>
-                
-                <!-- Log List with Virtualization -->
-                <ListView Grid.Row="1" ItemsSource="{Binding LogItems}" 
-                          VirtualizingPanel.IsVirtualizing="True"
-                          VirtualizingPanel.VirtualizationMode="Recycling"
-                          VirtualizingPanel.ScrollUnit="Pixel"
-                          ScrollViewer.CanContentScroll="True"
-                          BorderThickness="0">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            <Setter Property="Padding" Value="4,2"/>
-                            <Setter Property="MinHeight" Value="28"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="Время" Width="80">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm:ss'}" 
-                                                   VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            
-                            <GridViewColumn Header="Файл" Width="400">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding FileName}" 
-                                                   VerticalAlignment="Center" 
-                                                   TextTrimming="CharacterEllipsis"
-                                                   ToolTip="{Binding RelativePath}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            
-                            <GridViewColumn Header="Статус" Width="160">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding StatusText}" 
-                                                   VerticalAlignment="Center" FontSize="11"
-                                                   Foreground="{Binding Status, Converter={StaticResource StatusToColorConverter}}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            
-                            <GridViewColumn Header="Источник даты" Width="180">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding DateSource}" VerticalAlignment="Center" FontSize="11" 
-                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-            </Grid>
-        </Border>
+        <!-- Content: Sidebar + Log List -->
+        <Grid Grid.Row="2" Margin="0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Folder Tree Sidebar -->
+            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" 
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="{StaticResource BackgroundBrush}" 
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="8">
+                        <TextBlock Text="📁 Папки" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" Padding="4">
+                        <TreeView ItemsSource="{Binding FolderTree}" BorderThickness="0" Background="Transparent">
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate DataType="{x:Type models:FolderNode}" 
+                                                          ItemsSource="{Binding Children}">
+                                    <CheckBox Content="{Binding Name}" 
+                                              IsChecked="{Binding IsChecked}" 
+                                              Margin="2,1"/>
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Separator -->
+            <Rectangle Grid.Column="1" Width="1" Fill="{StaticResource BorderBrush}" Margin="4,0"/>
+
+            <!-- Log List -->
+            <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" 
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Log Header -->
+                    <Border Grid.Row="0" Background="{StaticResource BackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="160"/>
+                                <ColumnDefinition Width="180"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Время" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                            <TextBlock Grid.Column="1" Text="Файл" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                            <TextBlock Grid.Column="2" Text="Статус" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                            <TextBlock Grid.Column="3" Text="Источник даты" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Log List with Virtualization -->
+                    <ListView Grid.Row="1" ItemsSource="{Binding LogItems}" 
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              VirtualizingPanel.ScrollUnit="Pixel"
+                              ScrollViewer.CanContentScroll="True"
+                              BorderThickness="0">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="4,2"/>
+                                <Setter Property="MinHeight" Value="28"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Время" Width="80">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm:ss'}" 
+                                                       VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                
+                                <GridViewColumn Header="Файл" Width="400">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding FileName}" 
+                                                       VerticalAlignment="Center" 
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding RelativePath}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                
+                                <GridViewColumn Header="Статус" Width="160">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding StatusText}" 
+                                                       VerticalAlignment="Center" FontSize="11"
+                                                       Foreground="{Binding Status, Converter={StaticResource StatusToColorConverter}}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                
+                                <GridViewColumn Header="Источник даты" Width="180">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DateSource}" VerticalAlignment="Center" FontSize="11" 
+                                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </Border>
+        </Grid>
 
         <!-- Progress Bar -->
         <Grid Grid.Row="3" Margin="0,12,0,8">
@@ -169,16 +207,48 @@
             </StackPanel>
         </Grid>
 
-        <!-- Action Buttons -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button Content="🧹 Очистить пустые папки" Command="{Binding CleanEmptyFoldersCommand}" 
-                    Style="{StaticResource SecondaryButtonStyle}" MinWidth="140" Margin="0,0,8,0"/>
-            <Button Content="👁 Предпросмотр" Command="{Binding PreviewCommand}" 
-                    Style="{StaticResource SecondaryButtonStyle}" MinWidth="140" Margin="0,0,8,0"/>
-            <Button Content="▶ Начать перемещение" Command="{Binding StartMoveCommand}" 
-                    Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0"/>
-            <Button Content="⏹ Отмена" Command="{Binding CancelCommand}" 
-                    Style="{StaticResource SecondaryButtonStyle}" MinWidth="100"/>
-        </StackPanel>
+        <!-- Checkboxes + Action Buttons -->
+        <Grid Grid.Row="4" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <CheckBox Content="🗂 Сортировать по дням" IsChecked="{Binding SortByDays}" 
+                          Margin="0,0,12,0" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                          VerticalAlignment="Center"/>
+                <CheckBox Content="📷 Только фото" IsChecked="{Binding PhotosOnly}" 
+                          FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                          VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="🧹 Очистить пустые папки" Command="{Binding CleanEmptyFoldersCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}" MinWidth="140" Margin="0,0,8,0"/>
+                <Button Content="👁 Предпросмотр" Command="{Binding PreviewCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}" MinWidth="140" Margin="0,0,8,0"/>
+                <Button Content="▶ Начать перемещение" Command="{Binding StartMoveCommand}" 
+                        Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0"/>
+                <Button Content="⏹ Отмена" Command="{Binding CancelCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}" MinWidth="100"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Donation Footer -->
+        <Border Grid.Row="5" Background="#FFF8F0" BorderBrush="#FFE8D0" BorderThickness="1" 
+                CornerRadius="8" Padding="12,8" Margin="0,8,0,0">
+            <TextBlock FontSize="11" Foreground="#5C4033" LineHeight="16" TextWrapping="Wrap">
+                <Run Text="Приложение полностью бесплатное и без рекламы. Если оно сэкономило вам время или подняло настроение, вы можете угостить создателя чашечкой цикория ☕️ (350 ₽) или кусочком пиццы 🍕 (500 ₽), чтобы была мотивация создавать такие штуки дальше) ☺️"/>
+                <LineBreak/>
+                <Run Text="🔗 " FontSize="12"/>
+                <Hyperlink NavigateUri="https://pay.cloudtips.ru/p/1247b1bb" 
+                           RequestNavigate="Hyperlink_RequestNavigate"
+                           Foreground="#D4603A" FontWeight="SemiBold" FontSize="12"
+                           TextDecorations="Underline">
+                    pay.cloudtips.ru/p/1247b1bb
+                </Hyperlink>
+            </TextBlock>
+        </Border>
     </Grid>
 </Window>

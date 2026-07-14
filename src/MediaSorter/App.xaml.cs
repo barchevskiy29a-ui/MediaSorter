@@ -149,7 +149,6 @@ public partial class App : Application
                 services.AddSingleton<IPanoramaDetector, PanoramaDetector>();
 
                 // 4. Logging services
-                services.AddSingleton<ILoggerService, UiLoggerService>();
                 services.AddSingleton<ILoggerService, FileLoggerService>();
 
                 // 5. ViewModels
